@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>Legends Indev</title><style>*{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none}body,html{width:100%;height:100%;overflow:hidden;background:#1a1e29;font-family:monospace}#menu-screen{position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle,#2c3e50,#0f171e);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:1000;color:#fff;text-align:center}#menu-screen h1{font-size:32px;margin-bottom:5px;text-shadow:3px 3px #000;color:#75a7ff}#menu-screen p{font-size:14px;margin-bottom:30px;opacity:.8}#lang-select{position:absolute;top:20px;right:25px;font-size:16px;font-weight:bold;color:#fff;z-index:1010;background:rgba(0,0,0,.4);padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.2)}.lang-opt{cursor:pointer;opacity:.4;padding:2px 6px}.lang-opt.active{opacity:1;color:#75a7ff;text-shadow:0 0 8px rgba(117,167,255,.6)}.menu-btn{width:290px;padding:16px;margin:10px;background:#4a4a4a;border:3px solid #000;color:#fff;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:inset -4px -4px #2a2a2a,inset 4px 4px #7a7a7a;border-radius:4px}.menu-btn:active{background:#333;box-shadow:inset 4px 4px #1a1a1a,inset -4px -4px #5a5a5a}#game-title{position:absolute;top:15px;left:50%;transform:translateX(-50%);color:#fff;font-size:18px;font-weight:bold;text-shadow:2px 2px #000;z-index:10;pointer-events:none;display:none}#crosshair{position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);color:#fff;font-size:24px;font-weight:bold;display:none;justify-content:center;align-items:center;pointer-events:none;z-index:10;text-shadow:1px 1px #000}#joystick-container{position:absolute;bottom:35px;left:45px;width:125px;height:125px;background:rgba(255,255,255,0.18);border:3px solid rgba(255,255,255,0.25);border-radius:50%;display:none;justify-content:center;align-items:center;z-index:10;touch-action:none}#joystick-thumb{width:54px;height:54px;background:rgba(255,255,255,0.92);border-radius:50%;position:absolute;box-shadow:0 4px 10px rgba(0,0,0,0.3)}#mobile-jump-container{position:absolute;bottom:35px;right:45px;display:none;z-index:10}.btn{width:55px;height:55px;background:rgba(0,0,0,.45);border:2px solid #fff;border-radius:8px;color:#fff;font-size:22px;display:flex;justify-content:center;align-items:center}#btn-mobile-jump{width:95px;height:65px;font-size:14px;font-weight:bold;background:rgba(0,100,250,.5);border-color:#77c8ff;border-radius:12px;box-shadow:0 4px 8px rgba(0,0,0,0.3)}#hotbar{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);display:none;background:rgba(0,0,0,.6);padding:6px;border-radius:10px;border:2px solid #fff;z-index:100;gap:8px}.hotbar-slot{width:52px;height:52px;background:rgba(255,255,255,.15);border:2px solid #aaa;border-radius:6px;color:#fff;font-size:10px;font-weight:bold;display:flex;justify-content:center;align-items:center;cursor:pointer;text-align:center;word-break:break-all}.hotbar-slot.active{border-color:#75a7ff;background:rgba(117,167,255,.35);box-shadow:0 0 10px #75a7ff}#error-msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(210,40,40,.95);color:#fff;padding:20px;border-radius:12px;text-align:center;z-index:1100;border:2px solid #fff;display:none}</style><script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script></head><body><div id="error-msg"><h3></h3><p style="font-size:13px;margin-top:8px;opacity:.9"></p></div><div id="menu-screen"><div id="lang-select"><span class="lang-opt active" id="lang-tr">TR</span> | <span class="lang-opt" id="lang-en">EN</span></div><h1></h1><p></p><div class="menu-btn" id="btn-select-pc"></div><div class="menu-btn" id="btn-select-mobile"></div></div><div id="game-title"></div><div id="crosshair">+</div><div id="joystick-container"><div id="joystick-thumb"></div></div><div id="hotbar"><div class="hotbar-slot active" data-index="0">Tahta</div><div class="hotbar-slot" data-index="1">Çimen</div><div class="hotbar-slot" data-index="2">Toprak</div><div class="hotbar-slot" data-index="3">Taş</div></div><div id="mobile-jump-container"><div class="btn" id="btn-mobile-jump"></div></div><script>
+    if(typeof THREE==='undefined'){document.getElementById('error-msg').style.display='block';throw new Error("Three.js error");}
+    let currentLang='tr',deviceMode=null,selectedBlock=0;
+    const langData={
+        tr:{title:"LEGENDS INDEV",subtitle:"v0.6.2 - Kontrol Seçimi",pcBtn:"BİLGİSAYAR (PC MODU)",mobileBtn:"MOBİL (DOKUNMATİK MOD)",errTitle:"Grafik Motoru Hatası!",errDesc:"Lütfen internet/VPN bağlantınızı kontrol edin.",gameTitle:"Legends Indev v0.6.2",jumpBtn:"ZIPLA",b1:"Tahta",b2:"Çimen",b3:"Toprak",b4:"Taş"},
+        en:{title:"LEGENDS INDEV",subtitle:"v0.6.2 - Controls Selection",pcBtn:"COMPUTER (PC MODE)",mobileBtn:"MOBILE (TOUCH MODE)",errTitle:"Graphics Engine Error!",errDesc:"Please check your internet/VPN connection.",gameTitle:"Legends Indev v0.6.2",jumpBtn:"JUMP",b1:"Planks",b2:"Grass",b3:"Dirt",b4:"Stone"}
+    };
+    function setLanguage(l){
+        currentLang=l;document.getElementById('lang-tr').classList.toggle('active',l==='tr');document.getElementById('lang-en').classList.toggle('active',l==='en');
+        document.querySelector('#menu-screen h1').textContent=langData[l].title;document.querySelector('#menu-screen p').textContent=langData[l].subtitle;
+        document.getElementById('btn-select-pc').textContent=langData[l].pcBtn;document.getElementById('btn-select-mobile').textContent=langData[l].mobileBtn;
+        document.querySelector('#error-msg h3').textContent=langData[l].errTitle;document.querySelector('#error-msg p').textContent=langData[l].errDesc;
+        document.getElementById('game-title').textContent=langData[l].gameTitle;document.getElementById('btn-mobile-jump').textContent=langData[l].jumpBtn;
+        const slots=document.querySelectorAll('.hotbar-slot');slots[0].textContent=langData[l].b1;slots[1].textContent=langData[l].b2;slots[2].textContent=langData[l].b3;slots[3].textContent=langData[l].b4;
+    }
+    document.getElementById('lang-tr').addEventListener('click',(e)=>{e.stopPropagation();setLanguage('tr');});
+    document.getElementById('lang-en').addEventListener('click',(e)=>{e.stopPropagation();setLanguage('en');});
+    setLanguage('tr');
+
+    const scene=new THREE.Scene();scene.background=new THREE.Color(0x75a7ff);scene.fog=new THREE.FogExp2(0x75a7ff,0.03);
+    const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+    const renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(window.innerWidth,window.innerHeight);document.body.appendChild(renderer.domElement);
+    const ambientLight=new THREE.AmbientLight(0xffffff,0.8);scene.add(ambientLight);
+    const sunLight=new THREE.DirectionalLight(0xffffff,0.35);sunLight.position.set(20,40,15);scene.add(sunLight);
+
+    function generateVoxelTexture(t){
+        const c=document.createElement('canvas');c.width=16;c.height=16;const ctx=c.getContext('2d');
+        for(let x=0;x<16;x++){
+            for(let y=0;y<16;y++){
+                let r,g,b,n=(Math.random()-0.5)*25;
+                if(t==='grass_top'){r=85;g=155;b=55;}
+                else if(t==='dirt'){r=115;g=80;b=50;}
+                else if(t==='stone'){r=125;g=125;b=125;}
+                else if(t==='oak_planks'){r=155;g=120;b=80;if(y===0||y===4||y===8||y===12||x===0)n-=40;}
+                else if(t==='grass_side'){if(y<4||(y<7&&Math.random()>0.4)){r=85;g=155;b=55;}else{r=115;g=80;b=50;}}
+                r=Math.max(0,Math.min(255,r+n));g=Math.max(0,Math.min(255,g+n));b=Math.max(0,Math.min(255,b+n));
+                ctx.fillStyle=`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`;ctx.fillRect(x,y,1,1);
+            }
+        }
+        const tex=new THREE.CanvasTexture(c);tex.magFilter=THREE.NearestFilter;tex.minFilter=THREE.NearestFilter;
+        return new THREE.MeshStandardMaterial({map:tex,roughness:0.9});
+    }
+    const texGrassTop=generateVoxelTexture('grass_top'),texGrassSide=generateVoxelTexture('grass_side'),texDirt=generateVoxelTexture('dirt'),texWood=generateVoxelTexture('oak_planks'),texStone=generateVoxelTexture('stone');
+    const grassCubeMaterials=[texGrassSide,texGrassSide,texGrassTop,texDirt,texGrassSide,texGrassSide];
+    const blocksArray=[],cubeGeo=new THREE.BoxGeometry(1,1,1),worldSize=24;
+
+    for(let x=-worldSize/2;x<worldSize/2;x++){
+        for(let z=-worldSize/2;z<worldSize/2;z++){
+            const bG=new THREE.Mesh(cubeGeo,grassCubeMaterials);bG.position.set(x,0,z);scene.add(bG);blocksArray.push(bG);
+            for(let y=-1;y>=-3;y--){
+                const bD=new THREE.Mesh(cubeGeo,texDirt);bD.position.set(x,y,z);scene.add(bD);blocksArray.push(bD);
+            }
+            for(let y=-4;y>=-8;y--){
+                const bS=new THREE.Mesh(cubeGeo,texStone);bS.position.set(x,y,z);scene.add(bS);blocksArray.push(bS);
+            }
+        }
+    }
+    camera.position.set(0,2.1,5);camera.rotation.order='YXZ';
+    let playerVelocityY=0;const gravity=0.0045,jumpForce=0.11,moveSpeed=0.048;
+    let isGrounded=false;const moveState={forward:false,backward:false,left:false,right:false};
+    let joystickX=0,joystickY=0,joystickActive=false,joystickTouchId=null;
+    let lon=0,lat=0;const raycaster=new THREE.Raycaster();
+
+    document.getElementById('btn-select-pc').addEventListener('click',()=>initGame('pc'));
+    document.getElementById('btn-select-mobile').addEventListener('click',()=>initGame('mobile'));
+
+    function initGame(m){
+        deviceMode=m;document.getElementById('menu-screen').style.display='none';document.getElementById('game-title').style.display='block';document.getElementById('hotbar').style.display='flex';
+        if(m==='pc'){document.getElementById('crosshair').style.display='flex';setupPCControls();}
+        else if(m==='mobile'){document.getElementById('joystick-container').style.display='flex';document.getElementById('mobile-jump-container').style.display='block';setupMobileControls();}
+    }
+
+    function selectSlot(idx){
+        selectedBlock=idx;document.querySelectorAll('.hotbar-slot').forEach((s,i)=>s.classList.toggle('active',i===idx));
+    }
+    document.querySelectorAll('.hotbar-slot').forEach(s=>{
+        s.addEventListener('touchstart',(e)=>{e.stopPropagation();selectSlot(parseInt(s.getAttribute('data-index')));},{passive:true});
+        s.addEventListener('click',(e)=>{if(deviceMode==='pc'){e.stopPropagation();selectSlot(parseInt(s.getAttribute('data-index')));}});
+    });
+
+    function getIntersect(cX,cY,isC){
+        const m=new THREE.Vector2();if(isC)m.set(0,0);else{m.x=(cX/window.innerWidth)*2-1;m.y=-(cY/window.innerHeight)*2+1;}
+        raycaster.setFromCamera(m,camera);return raycaster.intersectObjects(blocksArray);
+    }
+
+    function breakBlock(x,y,isC){
+        const hits=getIntersect(x,y,isC);
+        if(hits.length>0&&hits[0].distance<5.0){
+            const b=hits[0].object;if(b.position.y===-8)return;
+            scene.remove(b);const idx=blocksArray.indexOf(b);if(idx>-1)blocksArray.splice(idx,1);
+        }
+    }
+
+    function placeBlock(x,y,isC){
+        const hits=getIntersect(x,y,isC);
+        if(hits.length>0&&hits[0].distance<5.0){
+            const h=hits[0],n=h.face.normal.clone(),pos=h.object.position.clone().add(n);
+            if(checkPlayerCollision(pos)) return;
+            let currentMat=texWood;
+            if(selectedBlock===1)currentMat=grassCubeMaterials;else if(selectedBlock===2)currentMat=texDirt;else if(selectedBlock===3)currentMat=texStone;
+            const b=new THREE.Mesh(cubeGeo,currentMat);b.position.copy(pos);scene.add(b);blocksArray.push(b);
+        }
+    }
+
+    function triggerAttack(){const t=document.getElementById('game-title');t.style.color='#ff4444';setTimeout(()=>t.style.color='#fff',110);}
+
+    function checkPlayerCollision(pos){
+        const px=camera.position.x,py=camera.position.y,pz=camera.position.z;
+        return (px+0.28>pos.x-0.5&&px-0.28<pos.x+0.5&&pz+0.28>pos.z-0.5&&pz-0.28<pos.z+0.5&&py+0.2>pos.y-0.5&&py-1.6<pos.y+0.5);
+    }
+
+    function checkHorizontalCollision(nX,nZ){
+        const py=camera.position.y-1.6;
+        for(let i=0;i<blocksArray.length;i++){
+            const b=blocksArray[i].position;
+            if(py+0.1<b.y+0.5&&py+1.8>b.y-0.5){
+                if(Math.abs(b.x-nX)<0.80&&Math.abs(b.z-nZ)<0.80)return true;
+            }
+        }
+        return false;
+    }
+
+    function setupPCControls(){
+        document.body.addEventListener('click',()=>{if(deviceMode==='pc')document.body.requestPointerLock();});
+        document.addEventListener('mousemove',(e)=>{
+            if(document.pointerLockElement!==document.body)return;
+            lon-=e.movementX*0.0022;lat-=e.movementY*0.0022;lat=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,lat));
+            camera.rotation.y=lon;camera.rotation.x=lat;
+        });
+        window.addEventListener('keydown',(e)=>{
+            if(e.code==='KeyW'||e.code==='ArrowUp')moveState.forward=true;
+            if(e.code==='KeyS'||e.code==='ArrowDown')moveState.backward=true;
+            if(e.code==='KeyA'||e.code==='ArrowLeft')moveState.left=true;
+            if(e.code==='KeyD'||e.code==='ArrowRight')moveState.right=true;
+            if(e.code==='Space'&&isGrounded){playerVelocityY=jumpForce;isGrounded=false;}
+            if(e.code==='Digit1')selectSlot(0);if(e.code==='Digit2')selectSlot(1);if(e.code==='Digit3')selectSlot(2);if(e.code==='Digit4')selectSlot(3);
+        });
+        window.addEventListener('keyup',(e)=>{
+            if(e.code==='KeyW'||e.code==='ArrowUp')moveState.forward=false;if(e.code==='KeyS'||e.code==='ArrowDown')moveState.backward=false;
+            if(e.code==='KeyA'||e.code==='ArrowLeft')moveState.left=false;if(e.code==='KeyD'||e.code==='ArrowRight')moveState.right=false;
+        });
+        let pTimeout=null,pStart=0;
+        window.addEventListener('mousedown',(e)=>{
+            if(document.pointerLockElement!==document.body)return;
+            if(e.button===0){pStart=Date.now();pTimeout=setTimeout(()=>{breakBlock(0,0,true);pStart=0;},350);}
+            else if(e.button===2)placeBlock(0,0,true);
+        });
+        window.addEventListener('mouseup',(e)=>{if(e.button===0){clearTimeout(pTimeout);if(pStart>0&&(Date.now()-pStart<350))triggerAttack();}});
+        window.addEventListener('contextmenu',e=>e.preventDefault());
+    }
+
+    function setupMobileControls(){
+        const joyContainer=document.getElementById('joystick-container');
+        const joyThumb=document.getElementById('joystick-thumb');
+        const maxRadius=46;
+
+        joyContainer.addEventListener('touchstart',(e)=>{
+            e.preventDefault();e.stopPropagation();
+            if(joystickActive)return;
+            const t=e.changedTouches[0];joystickActive=true;joystickTouchId=t.identifier;handleJoystickMove(t);
+        },{passive:false});
+
+        function handleJoystickMove(t){
+            const rect=joyContainer.getBoundingClientRect();
+            const cX=rect.left+rect.width/2,cY=rect.top+rect.height/2;
+            let dX=t.clientX-cX,dY=t.clientY-cY;
+            const dist=Math.sqrt(dX*dX+dY*dY);
+            if(dist>maxRadius){dX=(dX/dist)*maxRadius;dY=(dY/dist)*maxRadius;}
+            joyThumb.style.transform=`translate(${dX}px, ${dY}px)`;
+            joystickX=dX/maxRadius;joystickY=dY/maxRadius;
+        }
+
+        document.getElementById('btn-mobile-jump').addEventListener('touchstart',(e)=>{
+            e.preventDefault();e.stopPropagation();if(isGrounded){playerVelocityY=jumpForce;isGrounded=false;}
+        },{passive:false});
+
+        let activeTouches={},lookId=null,sX=0,sY=0;
+        window.addEventListener('touchstart',(e)=>{
+            if(deviceMode!=='mobile')return;
+            for(let i=0;i<e.changedTouches.length;i++){
+                const t=e.changedTouches[i];
+                if(t.target.closest('#joystick-container')||t.target.closest('#btn-mobile-jump')||t.target.closest('#lang-select')||t.target.closest('#hotbar'))continue;
+                const id=t.identifier;
+                activeTouches[id]={startX:t.clientX,startY:t.clientY,moved:false,timeout:setTimeout(()=>{if(activeTouches[id]&&!activeTouches[id].moved){breakBlock(activeTouches[id].startX,activeTouches[id].startY,false);delete activeTouches[id];}},350)};
+                if(lookId===null){lookId=id;sX=t.clientX;sY=t.clientY;}
+            }
+        },{passive:false});
+
+        window.addEventListener('touchmove',(e)=>{
+            if(deviceMode!=='mobile')return;
+            for(let i=0;i<e.touches.length;i++){
+                const t=e.touches[i];const id=t.identifier;
+                if(id===joystickTouchId&&joystickActive){handleJoystickMove(t);continue;}
+                if(activeTouches[id]){const dx=t.clientX-activeTouches[id].startX,dy=t.clientY-activeTouches[id].startY;if(Math.abs(dx)>7||Math.abs(dy)>7){activeTouches[id].moved=true;clearTimeout(activeTouches[id].timeout);}}
+                if(id===lookId){const dx=t.clientX-sX,dy=t.clientY-sY;lon-=dx*0.0038;lat-=dy*0.0038;lat=Math.max(-Math.PI/2.2,Math.min(Math.PI/2.2,lat));camera.rotation.y=lon;camera.rotation.x=lat;sX=t.clientX;sY=t.clientY;}
+            }
+        },{passive:false});
+
+        window.addEventListener('touchend',(e)=>{
+            if(deviceMode!=='mobile')return;
+            for(let i=0;i<e.changedTouches.length;i++){
+                const t=e.changedTouches[i];const id=t.identifier;
+                if(id===joystickTouchId){joystickActive=false;joystickTouchId=null;joystickX=0;joystickY=0;joyThumb.style.transform='translate(0px, 0px)';}
+                if(activeTouches[id]){clearTimeout(activeTouches[id].timeout);if(!activeTouches[id].moved){placeBlock(activeTouches[id].startX,activeTouches[id].startY,false);triggerAttack();}delete activeTouches[id];}
+                if(id===lookId){lookId=null;}
+            }
+        });
+    }
+
+    function animate(){
+        requestAnimationFrame(animate);
+        if(deviceMode){
+            const fV=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion),sV=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+            fV.y=0;fV.normalize();sV.y=0;sV.normalize();
+            let mV=new THREE.Vector3(0,0,0);
+            if(deviceMode==='pc'){
+                if(moveState.forward)mV.addScaledVector(fV,moveSpeed);if(moveState.backward)mV.addScaledVector(fV,-moveSpeed);
+                if(moveState.left)mV.addScaledVector(sV,-moveSpeed);if(moveState.right)mV.addScaledVector(sV,moveSpeed);
+            }else if(deviceMode==='mobile'&&joystickActive){
+                mV.addScaledVector(fV,-joystickY * moveSpeed);mV.addScaledVector(sV,joystickX * moveSpeed);
+            }
+
+            if(mV.lengthSq()>0){
+                const nX=camera.position.x+mV.x;if(checkHorizontalCollision(nX,camera.position.z)){camera.position.y+=0.52;if(!checkHorizontalCollision(nX,camera.position.z))camera.position.x=nX;else camera.position.y-=0.52;}else{camera.position.x=nX;}
+                const nZ=camera.position.z+mV.z;if(checkHorizontalCollision(camera.position.x,nZ)){camera.position.y+=0.52;if(!checkHorizontalCollision(camera.position.x,nZ))camera.position.z=nZ;else camera.position.y-=0.52;}else{camera.position.z=nZ;}
+            }
+
+            playerVelocityY-=gravity;camera.position.y+=playerVelocityY;
+            let oG=false;const px=camera.position.x,pz=camera.position.z,py=camera.position.y-1.6;
+            for(let i=0;i<blocksArray.length;i++){
+                const b=blocksArray[i].position;
+                if(Math.abs(b.x-px)<0.78&&Math.abs(b.z-pz)<0.78){
+                    if(py<=b.y+0.5&&py>=b.y-0.25&&playerVelocityY<=0){camera.position.y=b.y+2.1;playerVelocityY=0;oG=true;break;}
+                }
+            }
+            isGrounded=oG;if(camera.position.y<-15){camera.position.set(0,4.5,0);playerVelocityY=0;}
+        }
+        renderer.render(scene,camera);
+    }
+    window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
+    animate();
+</script></body></html>
